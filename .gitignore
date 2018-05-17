@@ -1,0 +1,5 @@
+build
+out
+.idea
+corrupt_checker.rb
+.DS_Store
