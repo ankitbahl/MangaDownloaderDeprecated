@@ -8,6 +8,8 @@ require 'fileutils'
 url_base = 'http://manganelo.com/chapter/read_one_piece_manga_online_free4/chapter_'
 start_chapters = [807, 817, 828, 839, 849, 859, 870, 880]
 end_chapters = [816, 827, 838, 848, 858, 869, 879, 889]
+
+FileUtils.rm_rf('build') if File.exist?('build')
 Dir.mkdir('build')
 Dir.mkdir('out') unless File.exist?('out')
 for vol in 0..start_chapters.length - 1
@@ -25,9 +27,13 @@ for vol in 0..start_chapters.length - 1
     page = 0
     document.css('.vung-doc').css('img').each do |img|
       url = URI.parse(img.attr('src'))
-      img_req = Net::HTTP::Get.new(url.to_s)
-      img_res = Net::HTTP.start(url.host, url.port, :use_ssl => true) do |http|
-        http.request(img_req)
+      img_res = nil
+      loop do
+        img_req = Net::HTTP::Get.new(url.to_s)
+        img_res = Net::HTTP.start(url.host, url.port, :use_ssl => true) do |http|
+          http.request(img_req)
+        end
+        break if img_res.is_a?(Net::HTTPSuccess)
       end
       open("build/Chapter_#{i}/page_#{page}.jpg", "wb") do |file|
         file.write(img_res.body)
