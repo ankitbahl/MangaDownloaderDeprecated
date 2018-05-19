@@ -39,7 +39,7 @@ for vol in 0..start_chapters.length - 1
         file.write(img_res.body)
       end
       img = Magick::Image::read("build/Chapter_#{i}/page_#{page}.jpg").first
-      if img.columns > 850
+      if img.columns > img.rows
         img.rotate! 90
         img.write("build/Chapter_#{i}/page_#{page}.jpg")
       end
@@ -55,7 +55,7 @@ for vol in 0..start_chapters.length - 1
     end
   end
   img = Magick::ImageList.new(*imagelist)
-  img.write("out/vol#{vol + 81}.pdf")
-  puts "done vol #{vol + 81}"
+  img.write("out/vol#{vol}.pdf")
+  puts "done vol #{vol}"
 end
 FileUtils.rm_rf('build')
