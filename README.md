@@ -1,11 +1,26 @@
-MangaDownloader is a ruby script that downloads manga (sourced from manganelo.com). It downloads all the images and creates pdfs of the compiled volumes. All that needs to be changed in order to customize which manga to download is to change the following lines:
-```ruby
-url_base = 'http://manganelo.com/chapter/read_one_piece_manga_online_free4/chapter_'
-start_chapters = [807, 817, 828, 839, 849, 859, 870, 880]
-end_chapters = [816, 827, 838, 848, 858, 869, 879, 889]
+MangaDownloader is a ruby script that downloads manga (sourced from manganelo.com). It downloads all the images and creates pdfs of the compiled volumes. All that needs to be changed in order to customize which manga to download 
+
+#Dependencies
+1. Have ruby >= 2.3
+1. Have ImageMagick >= 6.8.9
+
+#Running
+'usage is "./downloader.rb search_term vol1_start,vol2_start... vol1_end, vol2_end..." 
+
+where:
+search term is the manga search term (e.g. "one piece")
+
+vol_n_start/vol_n_end is the chapter number of the nth volume start/end'
+
+
+e.g.
+
 ```
-The url_base line must be changed to the correct url for the manga, and the start and end chapters are the chapter numbers for the start and end of each volume. You can also only specify one volume of start and end chapter and the script will compile all chapters into one large volume. To run, simply call:
+./downloader.rb "one piece" 1,4,6 3,5,9
 ```
-./downloader.rb
-```
-This will work if you have ruby installed.
+
+This will search for one piece and compile it into vol_1.pdf = chap 1-3, vol_2.pdf = chap 4-5, etc.
+
+PDF output will be found in out/ dir
+
+Large volumes will not work on computers with low memory

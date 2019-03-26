@@ -3,25 +3,56 @@
 require 'net/http'
 require 'nokogiri'
 require 'rmagick'
-require 'fileutils'
+require './pdf_compiler.rb'
 
-url_base = 'http://manganelo.com/chapter/read_one_piece_manga_online_free4/chapter_'
-start_chapters = [807, 817, 828, 839, 849, 859, 870, 880]
-end_chapters = [816, 827, 838, 848, 858, 869, 879, 889]
+def get_url_fragment(search_term)
+  search_url = "https://manganelo.com/search/#{search_term}"
+  uri = URI.parse(search_url)
+  req = Net::HTTP.new(uri.host, uri.port)
+  req.use_ssl = true
+  res = req.get(uri.request_uri)
+  document = Nokogiri::HTML(res.body)
+  document.css('.story_item').each do |search_item|
+    title = search_item.css('.story_name a')[0].content
+    puts "Is #{title} the manga you want to download? (y/n)"
+    while true
+      option = STDIN.gets.gsub(/[ \n]/, '')
+      case option
+        when 'y'
+          return search_item.css('a')[0].attr('href').split('/').last
+        when 'n'
+          break
+        when 'q'
+          raise RuntimeError
+        else
+          puts 'please put y or n'
+      end
+    end
+  end
+  puts 'no more search results, quitting'
+  raise RuntimeError
+end
 
-FileUtils.rm_rf('build') if File.exist?('build')
+if ARGV.length < 3
+  puts 'usage is "./downloader.rb search_term vol1_start,vol2_start... vol1_end, vol2_end..."'
+  raise RuntimeError
+end
+
+fragment = get_url_fragment(ARGV[0])
+url_base = "https://manganelo.com/chapter/#{fragment}/chapter_"
+start_chapters = ARGV[1].split(',').map(&:to_i)
+end_chapters = ARGV[2].split(',').map(&:to_i)
+`rm -rf build` if File.exist?('build')
 Dir.mkdir('build')
 Dir.mkdir('out') unless File.exist?('out')
 for vol in 0..start_chapters.length - 1
   start_chapter = start_chapters[vol]
   end_chapter = end_chapters[vol]
-  pagenums = {}
   for i in start_chapter..end_chapter
     uri = URI.parse("#{url_base}#{i}")
-    req = Net::HTTP::Get.new(uri.to_s)
-    res = Net::HTTP.start(uri.host, uri.port) do |http|
-      http.request(req)
-    end
+    req = Net::HTTP.new(uri.host, uri.port)
+    req.use_ssl = true
+    res = req.get(uri.request_uri)
     document = Nokogiri::HTML(res.body)
     Dir.mkdir "build/Chapter_#{i}"
     page = 0
@@ -46,16 +77,9 @@ for vol in 0..start_chapters.length - 1
       puts "Done chapter #{i}, page #{page}"
       page += 1
     end
-    pagenums[i] = page - 1
   end
-  imagelist = []
-  for chap in start_chapter..end_chapter
-    for num in 0..pagenums[chap]
-      imagelist.push("build/Chapter_#{chap}/page_#{num}.jpg")
-    end
-  end
-  img = Magick::ImageList.new(*imagelist)
-  img.write("out/vol#{vol}.pdf")
-  puts "done vol #{vol}"
 end
-FileUtils.rm_rf('build')
+
+`echo #{ARGV[1]} >> build/start.t`
+`echo #{ARGV[2]} >> build/end.t`
+compile_pdfs
