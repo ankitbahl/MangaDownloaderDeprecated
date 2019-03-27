@@ -6,6 +6,7 @@ require 'rmagick'
 require './pdf_compiler.rb'
 
 def get_url_fragment(search_term)
+  search_term = search_term.gsub(' ', '_')
   search_url = "https://manganelo.com/search/#{search_term}"
   uri = URI.parse(search_url)
   req = Net::HTTP.new(uri.host, uri.port)
