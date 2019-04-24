@@ -3,6 +3,7 @@
 require 'rmagick'
 
 def compile_pdfs
+  title = `cat build/title.t`
   start_chapters = `cat build/start.t`.split(',').map(&:to_i)
   end_chapters = `cat build/end.t`.split(',').map(&:to_i)
   start_chapters.each_with_index do |start_chap, i|
@@ -15,7 +16,7 @@ def compile_pdfs
       end
     end
     img = Magick::ImageList.new(*image_list)
-    img.write("out/vol_#{i + 1}.pdf")
+    img.write("out/#{title}_chap_#{start_chap}-#{end_chapters[i]}.pdf")
     puts "done vol #{i + 1}"
   end
   `rm -rf build`

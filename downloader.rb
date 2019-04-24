@@ -20,6 +20,7 @@ def get_url_fragment(search_term)
       option = STDIN.gets.gsub(/[ \n]/, '')
       case option
         when 'y'
+          `echo #{title} >> build/title.t`
           return search_item.css('a')[0].attr('href').split('/').last
         when 'n'
           break
@@ -39,13 +40,13 @@ if ARGV.length < 3
   raise RuntimeError
 end
 
-fragment = get_url_fragment(ARGV[0])
-url_base = "https://manganelo.com/chapter/#{fragment}/chapter_"
 start_chapters = ARGV[1].split(',').map(&:to_i)
 end_chapters = ARGV[2].split(',').map(&:to_i)
 `rm -rf build` if File.exist?('build')
 Dir.mkdir('build')
 Dir.mkdir('out') unless File.exist?('out')
+fragment = get_url_fragment(ARGV[0])
+url_base = "https://manganelo.com/chapter/#{fragment}/chapter_"
 for vol in 0..start_chapters.length - 1
   start_chapter = start_chapters[vol]
   end_chapter = end_chapters[vol]
@@ -80,7 +81,6 @@ for vol in 0..start_chapters.length - 1
     end
   end
 end
-
 `echo #{ARGV[1]} >> build/start.t`
 `echo #{ARGV[2]} >> build/end.t`
 compile_pdfs
