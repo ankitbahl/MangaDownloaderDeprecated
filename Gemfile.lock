@@ -1,0 +1,35 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    async (1.17.1)
+      console (~> 1.0)
+      nio4r (~> 2.3)
+      timers (~> 4.1)
+    async-http (0.38.2)
+      async (~> 1.14)
+      async-io (~> 1.18)
+      http-protocol (~> 0.15)
+    async-io (1.21.0)
+      async (~> 1.14)
+    console (1.2.3)
+    http-hpack (0.1.1)
+    http-protocol (0.15.0)
+      http-hpack (~> 0.1.0)
+    mini_portile2 (2.4.0)
+    nio4r (2.3.1)
+    nokogiri (1.10.3)
+      mini_portile2 (~> 2.4.0)
+    rmagick (3.1.0)
+    timers (4.3.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  async
+  async-http
+  nokogiri
+  rmagick
+
+BUNDLED WITH
+   1.15.1

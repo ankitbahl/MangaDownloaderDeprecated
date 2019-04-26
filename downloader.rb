@@ -4,6 +4,8 @@ require 'net/http'
 require 'nokogiri'
 require 'rmagick'
 require './pdf_compiler.rb'
+require 'async'
+require 'async/http/internet'
 
 def get_url_fragment(search_term)
   search_term = search_term.gsub(' ', '_')
@@ -13,26 +15,40 @@ def get_url_fragment(search_term)
   req.use_ssl = true
   res = req.get(uri.request_uri)
   document = Nokogiri::HTML(res.body)
-  document.css('.story_item').each do |search_item|
-    title = search_item.css('.story_name a')[0].content
-    puts "Is #{title} the manga you want to download? (y/n)"
-    while true
-      option = STDIN.gets.gsub(/[ \n]/, '')
-      case option
-        when 'y'
-          `echo #{title} >> build/title.t`
-          return search_item.css('a')[0].attr('href').split('/').last
-        when 'n'
-          break
-        when 'q'
-          raise RuntimeError
-        else
-          puts 'please put y or n'
-      end
+  options = document.css('.story_item').map do |search_item|
+    {
+        title: search_item.css('.story_name a')[0].content,
+        url: search_item.css('a')[0].attr('href').split('/').last
+    }
+  end
+
+  (0..[6, options.length - 1].min).each do |i|
+    puts "#{i + 1}: #{options[i][:title]}"
+  end
+
+  puts 'Enter number for which you want to download: '
+  option = STDIN.gets.gsub(/[ \n]/, '').to_i
+  `echo #{options[option - 1][:title]} >> build/title.t`
+  options[option - 1][:url]
+end
+
+def async_image(url, i, page)
+  Async.run do
+    internet = Async::HTTP::Internet.new
+    # Make a new internet:
+
+    # Issues a GET request to Google:
+    response = internet.get(url)
+    response.save("build/Chapter_#{i}/page_#{page}.jpg")
+
+    # The internet is closed for business:
+    internet.close
+    img = Magick::Image::read("build/Chapter_#{i}/page_#{page}.jpg").first
+    if img.columns > img.rows
+      img.rotate! 90
+      img.write("build/Chapter_#{i}/page_#{page}.jpg")
     end
   end
-  puts 'no more search results, quitting'
-  raise RuntimeError
 end
 
 if ARGV.length < 3
@@ -51,6 +67,7 @@ for vol in 0..start_chapters.length - 1
   start_chapter = start_chapters[vol]
   end_chapter = end_chapters[vol]
   for i in start_chapter..end_chapter
+    puts "Chapter #{i}"
     uri = URI.parse("#{url_base}#{i}")
     req = Net::HTTP.new(uri.host, uri.port)
     req.use_ssl = true
@@ -58,26 +75,12 @@ for vol in 0..start_chapters.length - 1
     document = Nokogiri::HTML(res.body)
     Dir.mkdir "build/Chapter_#{i}"
     page = 0
-    document.css('.vung-doc').css('img').each do |img|
-      url = URI.parse(img.attr('src'))
-      img_res = nil
-      loop do
-        img_req = Net::HTTP::Get.new(url.to_s)
-        img_res = Net::HTTP.start(url.host, url.port, :use_ssl => true) do |http|
-          http.request(img_req)
-        end
-        break if img_res.is_a?(Net::HTTPSuccess)
+    Async do
+      document.css('.vung-doc').css('img').each do |img|
+        url = img.attr('src')
+        async_image(url, i, page)
+        page += 1
       end
-      open("build/Chapter_#{i}/page_#{page}.jpg", "wb") do |file|
-        file.write(img_res.body)
-      end
-      img = Magick::Image::read("build/Chapter_#{i}/page_#{page}.jpg").first
-      if img.columns > img.rows
-        img.rotate! 90
-        img.write("build/Chapter_#{i}/page_#{page}.jpg")
-      end
-      puts "Done chapter #{i}, page #{page}"
-      page += 1
     end
   end
 end
