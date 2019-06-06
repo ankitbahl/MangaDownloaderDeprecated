@@ -78,7 +78,7 @@ end_chapters = ARGV[2].split(',').map(&:to_i)
 `rm -rf build` if File.exist?('build')
 Dir.mkdir('build')
 Dir.mkdir('out') unless File.exist?('out')
-fragment = get_url_fragment(ARGV[0])
+fragment = ARGV[0].include? '_' ? ARGV[0] : get_url_fragment(ARGV[0])
 url_base = "https://manganelo.com/chapter/#{fragment}/chapter_"
 threads = []
 for vol in 0..start_chapters.length - 1
