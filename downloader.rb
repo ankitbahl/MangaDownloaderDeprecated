@@ -66,6 +66,12 @@ def compile_pdfs(start_chapter, end_chapter)
   img = Magick::ImageList.new(*image_list)
   img.write("out/#{title}_chap_#{start_chapter}-#{end_chapter}.pdf")
   puts "Done writing chapters #{start_chapter}-#{end_chapter}"
+  update_progress
+end
+
+def update_progress
+  $progress += 100 / $total_progress
+  `echo #{$progress} > progress.t`
 end
 
 if ARGV.length < 3
@@ -78,8 +84,16 @@ end_chapters = ARGV[2].split(',').map(&:to_i)
 `rm -rf build` if File.exist?('build')
 Dir.mkdir('build')
 Dir.mkdir('out') unless File.exist?('out')
-fragment = ARGV[0].include? '_' ? ARGV[0] : get_url_fragment(ARGV[0])
+ARGV[0].include? '_' ? fragment = get_url_fragment(ARGV[0]) : fragment = ARGV[0]
 url_base = "https://manganelo.com/chapter/#{fragment}/chapter_"
+`rm progress.t`
+`touch progress.t`
+`echo 0 > progress.t`
+$progress = 0
+$total_progress = start_chapters.length
+for vol in 0..start_chapters.length - 1
+  $total_progress += end_chapters[vol] - start_chapters[vol] + 1
+end
 threads = []
 for vol in 0..start_chapters.length - 1
   start_chapter = start_chapters[vol]
@@ -100,6 +114,7 @@ for vol in 0..start_chapters.length - 1
         page += 1
       end
     end
+    update_progress
   end
   tmp = start_chapter
   tmp2 = end_chapter
@@ -111,5 +126,5 @@ for vol in 0..start_chapters.length - 1
 end
 
 threads.each(&:join)
-
+`echo 100 > progress.t`
 `rm -rf build`
