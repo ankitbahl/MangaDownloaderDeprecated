@@ -3,9 +3,10 @@
 require 'net/http'
 require 'nokogiri'
 require 'rmagick'
-require './pdf_compiler.rb'
 require 'async'
 require 'async/http/internet'
+require 'thread'
+$sem = Mutex.new
 
 def get_url_fragment(search_term)
   search_term = search_term.gsub(' ', '_')
@@ -51,6 +52,22 @@ def async_image(url, i, page)
   end
 end
 
+def compile_pdfs(start_chapter, end_chapter)
+  puts "Writing #{start_chapter} to #{end_chapter}"
+  title = `cat build/title.t`
+  image_list = []
+  (start_chapter..end_chapter).each do |chap|
+    dir = "./build/Chapter_#{chap}"
+    num_pages = Dir[File.join(dir, '**', '*')].count { |file| File.file?(file)}
+    for num in 0..num_pages - 1
+      image_list.push("build/Chapter_#{chap}/page_#{num}.jpg")
+    end
+  end
+  img = Magick::ImageList.new(*image_list)
+  img.write("out/#{title}_chap_#{start_chapter}-#{end_chapter}.pdf")
+  puts "Done writing chapters #{start_chapter}-#{end_chapter}"
+end
+
 if ARGV.length < 3
   puts 'usage is "./downloader.rb search_term vol1_start,vol2_start... vol1_end, vol2_end..."'
   raise RuntimeError
@@ -63,6 +80,7 @@ Dir.mkdir('build')
 Dir.mkdir('out') unless File.exist?('out')
 fragment = get_url_fragment(ARGV[0])
 url_base = "https://manganelo.com/chapter/#{fragment}/chapter_"
+threads = []
 for vol in 0..start_chapters.length - 1
   start_chapter = start_chapters[vol]
   end_chapter = end_chapters[vol]
@@ -83,7 +101,15 @@ for vol in 0..start_chapters.length - 1
       end
     end
   end
+  tmp = start_chapter
+  tmp2 = end_chapter
+  t = Thread.new do
+    compile_pdfs(tmp, tmp2)
+  end
+
+  threads.push(t)
 end
-`echo #{ARGV[1]} >> build/start.t`
-`echo #{ARGV[2]} >> build/end.t`
-compile_pdfs
+
+threads.each(&:join)
+
+`rm -rf build`
