@@ -29,7 +29,7 @@ def get_url_fragment(search_term)
 
   puts 'Enter number for which you want to download: '
   option = STDIN.gets.gsub(/[ \n]/, '').to_i
-  `echo #{options[option - 1][:title]} >> build/title.t`
+  `echo #{options[option - 1][:title]} > build/title.t`
   options[option - 1][:url]
 end
 
@@ -81,10 +81,21 @@ end
 
 start_chapters = ARGV[1].split(',').map(&:to_i)
 end_chapters = ARGV[2].split(',').map(&:to_i)
+
 `rm -rf build` if File.exist?('build')
-Dir.mkdir('build')
+if ARGV.length > 3
+  `mkdir build`
+  `touch build/title.t`
+  `echo #{ARGV[3]} > build/title.t`
+end
+Dir.mkdir('build') unless File.exist?('build')
 Dir.mkdir('out') unless File.exist?('out')
-ARGV[0].include? '_' ? fragment = get_url_fragment(ARGV[0]) : fragment = ARGV[0]
+puts ARGV[0]
+if ARGV[0].include? '_'
+  fragment = ARGV[0]
+else
+  fragment = get_url_fragment(ARGV[0])
+end
 url_base = "https://manganelo.com/chapter/#{fragment}/chapter_"
 `rm progress.t`
 `touch progress.t`
