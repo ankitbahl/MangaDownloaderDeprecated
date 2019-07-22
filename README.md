@@ -2,7 +2,7 @@ MangaDownloader is a ruby script that downloads manga (sourced from manganelo.co
 
 #Dependencies
 1. Have ruby >= 2.3
-1. Have ImageMagick >= 6.8.9
+1. Have ImageMagick 6.9.x
 
 #Running
 'usage is "./downloader.rb search_term vol1_start,vol2_start... vol1_end, vol2_end..." 
