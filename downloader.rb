@@ -55,6 +55,7 @@ end
 def compile_pdfs(start_chapter, end_chapter)
   puts "Writing #{start_chapter} to #{end_chapter}"
   title = `cat build/title.t`
+  title = title.slice(0, title.length - 1)
   image_list = []
   (start_chapter..end_chapter).each do |chap|
     dir = "./build/Chapter_#{chap}"
