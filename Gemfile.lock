@@ -17,7 +17,7 @@ GEM
       http-hpack (~> 0.1.0)
     mini_portile2 (2.4.0)
     nio4r (2.3.1)
-    nokogiri (1.10.3)
+    nokogiri (1.10.8)
       mini_portile2 (~> 2.4.0)
     rmagick (3.1.0)
     timers (4.3.0)
